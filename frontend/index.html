@@ -1,0 +1,1356 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"/>
+<meta name="viewport" content="width=device-width, initial-scale=1.0"/>
+<title>AttritionIQ — Employee Risk Intelligence</title>
+<link href="https://fonts.googleapis.com/css2?family=Syne:wght@400;600;700;800&family=DM+Mono:wght@300;400;500&family=DM+Sans:wght@300;400;500&display=swap" rel="stylesheet"/>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/Chart.js/4.4.0/chart.umd.min.js"></script>
+<style>
+:root {
+  --bg: #080c14;
+  --surface: #0d1420;
+  --surface2: #131c2e;
+  --border: #1e2d45;
+  --accent: #00d4ff;
+  --accent2: #7b61ff;
+  --danger: #ff4757;
+  --warning: #ffa502;
+  --success: #2ed573;
+  --text: #e8f0fe;
+  --muted: #6b7fa3;
+  --glow: rgba(0,212,255,0.15);
+}
+*{margin:0;padding:0;box-sizing:border-box;}
+body{
+  background:var(--bg);
+  color:var(--text);
+  font-family:'DM Sans',sans-serif;
+  min-height:100vh;
+  overflow-x:hidden;
+}
+/* Background grid */
+body::before{
+  content:'';
+  position:fixed;
+  inset:0;
+  background-image:
+    linear-gradient(rgba(0,212,255,0.03) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(0,212,255,0.03) 1px, transparent 1px);
+  background-size:40px 40px;
+  pointer-events:none;
+  z-index:0;
+}
+
+/* ── LAYOUT ── */
+.layout{display:flex;min-height:100vh;position:relative;z-index:1;}
+
+/* Sidebar */
+.sidebar{
+  width:240px;
+  background:var(--surface);
+  border-right:1px solid var(--border);
+  display:flex;
+  flex-direction:column;
+  position:fixed;
+  height:100vh;
+  top:0;left:0;
+  z-index:100;
+}
+.logo{
+  padding:28px 24px 20px;
+  border-bottom:1px solid var(--border);
+}
+.logo-mark{
+  font-family:'Syne',sans-serif;
+  font-size:22px;
+  font-weight:800;
+  letter-spacing:-0.5px;
+  background:linear-gradient(135deg,var(--accent),var(--accent2));
+  -webkit-background-clip:text;
+  -webkit-text-fill-color:transparent;
+}
+.logo-sub{
+  font-family:'DM Mono',monospace;
+  font-size:10px;
+  color:var(--muted);
+  letter-spacing:2px;
+  text-transform:uppercase;
+  margin-top:2px;
+}
+.nav{flex:1;padding:16px 0;}
+.nav-item{
+  display:flex;
+  align-items:center;
+  gap:12px;
+  padding:12px 24px;
+  cursor:pointer;
+  transition:all 0.2s;
+  border-left:3px solid transparent;
+  font-size:14px;
+  color:var(--muted);
+  font-weight:500;
+}
+.nav-item:hover{color:var(--text);background:rgba(0,212,255,0.05);}
+.nav-item.active{
+  color:var(--accent);
+  border-left-color:var(--accent);
+  background:rgba(0,212,255,0.08);
+}
+.nav-icon{font-size:18px;width:24px;text-align:center;}
+.sidebar-status{
+  padding:20px 24px;
+  border-top:1px solid var(--border);
+}
+.status-dot{
+  display:inline-block;
+  width:8px;height:8px;
+  border-radius:50%;
+  background:var(--muted);
+  margin-right:8px;
+  transition:background 0.3s;
+}
+.status-dot.ready{background:var(--success);box-shadow:0 0 6px var(--success);}
+.status-text{font-family:'DM Mono',monospace;font-size:11px;color:var(--muted);}
+
+/* Main content */
+.main{
+  margin-left:240px;
+  flex:1;
+  min-height:100vh;
+  display:flex;
+  flex-direction:column;
+}
+.topbar{
+  padding:20px 40px;
+  border-bottom:1px solid var(--border);
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  background:var(--surface);
+  position:sticky;top:0;z-index:50;
+}
+.page-title{
+  font-family:'Syne',sans-serif;
+  font-size:20px;
+  font-weight:700;
+}
+.page-content{padding:32px 40px;flex:1;}
+
+/* ── COMPONENTS ── */
+.btn{
+  display:inline-flex;align-items:center;gap:8px;
+  padding:10px 20px;border:none;border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:14px;font-weight:500;
+  cursor:pointer;transition:all 0.2s;
+}
+.btn-primary{
+  background:linear-gradient(135deg,var(--accent),#0099bb);
+  color:#000;
+  box-shadow:0 0 20px rgba(0,212,255,0.3);
+}
+.btn-primary:hover{transform:translateY(-1px);box-shadow:0 0 30px rgba(0,212,255,0.5);}
+.btn-primary:active{transform:translateY(0);}
+.btn-secondary{
+  background:var(--surface2);
+  color:var(--text);
+  border:1px solid var(--border);
+}
+.btn-secondary:hover{border-color:var(--accent);color:var(--accent);}
+.btn-sm{padding:6px 14px;font-size:12px;}
+.btn:disabled{opacity:0.5;cursor:not-allowed;transform:none!important;}
+
+.card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:24px;
+  transition:border-color 0.2s;
+}
+.card:hover{border-color:rgba(0,212,255,0.2);}
+.card-title{
+  font-family:'Syne',sans-serif;
+  font-size:14px;font-weight:700;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:1px;
+  margin-bottom:16px;
+}
+
+/* Stats */
+.stats-grid{
+  display:grid;
+  grid-template-columns:repeat(auto-fill,minmax(200px,1fr));
+  gap:20px;
+  margin-bottom:32px;
+}
+.stat-card{
+  background:var(--surface);
+  border:1px solid var(--border);
+  border-radius:12px;
+  padding:20px;
+  position:relative;
+  overflow:hidden;
+}
+.stat-card::before{
+  content:'';
+  position:absolute;
+  top:0;left:0;right:0;
+  height:2px;
+  background:var(--accent-line, linear-gradient(90deg,var(--accent),var(--accent2)));
+}
+.stat-label{
+  font-family:'DM Mono',monospace;
+  font-size:11px;
+  color:var(--muted);
+  text-transform:uppercase;
+  letter-spacing:1.5px;
+}
+.stat-value{
+  font-family:'Syne',sans-serif;
+  font-size:32px;
+  font-weight:800;
+  margin:8px 0 4px;
+  line-height:1;
+}
+.stat-sub{font-size:12px;color:var(--muted);}
+
+/* Risk badges */
+.badge{
+  display:inline-flex;align-items:center;gap:5px;
+  padding:4px 10px;border-radius:20px;
+  font-family:'DM Mono',monospace;font-size:11px;font-weight:500;
+}
+.badge-high{background:rgba(255,71,87,0.15);color:var(--danger);border:1px solid rgba(255,71,87,0.3);}
+.badge-medium{background:rgba(255,165,2,0.15);color:var(--warning);border:1px solid rgba(255,165,2,0.3);}
+.badge-low{background:rgba(46,213,115,0.15);color:var(--success);border:1px solid rgba(46,213,115,0.3);}
+
+/* Table */
+.table-wrap{overflow-x:auto;border-radius:8px;border:1px solid var(--border);}
+table{width:100%;border-collapse:collapse;}
+th{
+  background:var(--surface2);
+  padding:12px 16px;
+  text-align:left;
+  font-family:'DM Mono',monospace;
+  font-size:11px;color:var(--muted);
+  text-transform:uppercase;letter-spacing:1px;
+  border-bottom:1px solid var(--border);
+  white-space:nowrap;
+}
+td{
+  padding:12px 16px;
+  font-size:13px;
+  border-bottom:1px solid rgba(30,45,69,0.5);
+}
+tr:hover td{background:rgba(0,212,255,0.03);}
+tr:last-child td{border-bottom:none;}
+
+/* Progress bar */
+.progress{
+  height:6px;background:var(--surface2);border-radius:3px;overflow:hidden;
+  min-width:80px;display:inline-block;width:100%;max-width:140px;
+}
+.progress-fill{height:100%;border-radius:3px;transition:width 0.5s ease;}
+
+/* Forms */
+.form-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:16px;}
+.form-group{display:flex;flex-direction:column;gap:6px;}
+label{font-size:12px;color:var(--muted);font-family:'DM Mono',monospace;text-transform:uppercase;letter-spacing:1px;}
+input,select{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  color:var(--text);
+  padding:10px 14px;
+  border-radius:8px;
+  font-family:'DM Sans',sans-serif;font-size:14px;
+  transition:border-color 0.2s;
+}
+input:focus,select:focus{outline:none;border-color:var(--accent);}
+select option{background:var(--surface2);}
+
+/* Charts */
+.charts-grid{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin-bottom:32px;}
+.chart-box{position:relative;height:280px;}
+
+/* Risk gauge */
+.gauge-wrap{display:flex;flex-direction:column;align-items:center;padding:20px 0;}
+.gauge-number{
+  font-family:'Syne',sans-serif;font-size:56px;font-weight:800;
+  line-height:1;margin-top:-10px;
+}
+.gauge-label{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);margin-top:4px;}
+
+/* Model comparison */
+.model-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(260px,1fr));gap:16px;}
+.model-card{
+  background:var(--surface2);
+  border:1px solid var(--border);
+  border-radius:10px;padding:20px;
+  transition:all 0.2s;
+}
+.model-card.best{border-color:var(--accent);box-shadow:0 0 20px var(--glow);}
+.model-name{font-family:'Syne',sans-serif;font-size:16px;font-weight:700;margin-bottom:12px;}
+.metric-row{display:flex;justify-content:space-between;align-items:center;margin-bottom:8px;}
+.metric-name{font-size:12px;color:var(--muted);}
+.metric-val{font-family:'DM Mono',monospace;font-size:13px;font-weight:500;}
+
+/* Alerts */
+.alert{
+  padding:14px 18px;border-radius:8px;font-size:13px;
+  display:flex;align-items:flex-start;gap:10px;
+  margin-bottom:8px;
+}
+.alert-warning{background:rgba(255,165,2,0.1);border:1px solid rgba(255,165,2,0.3);color:#ffd070;}
+.alert-danger{background:rgba(255,71,87,0.1);border:1px solid rgba(255,71,87,0.3);color:#ff8a95;}
+.alert-success{background:rgba(46,213,115,0.1);border:1px solid rgba(46,213,115,0.3);color:#80e8a5;}
+.alert-info{background:rgba(0,212,255,0.1);border:1px solid rgba(0,212,255,0.3);color:#60d9f0;}
+
+/* Pages */
+.page{display:none;}
+.page.active{display:block;}
+
+/* Loader */
+.loader{
+  display:inline-block;
+  width:16px;height:16px;
+  border:2px solid rgba(0,212,255,0.3);
+  border-top-color:var(--accent);
+  border-radius:50%;
+  animation:spin 0.7s linear infinite;
+}
+@keyframes spin{to{transform:rotate(360deg);}}
+
+/* Pagination */
+.pagination{
+  display:flex;align-items:center;gap:8px;
+  justify-content:flex-end;margin-top:16px;
+}
+.page-btn{
+  padding:6px 12px;border-radius:6px;border:1px solid var(--border);
+  background:var(--surface2);color:var(--text);cursor:pointer;
+  font-family:'DM Mono',monospace;font-size:12px;
+  transition:all 0.2s;
+}
+.page-btn:hover{border-color:var(--accent);color:var(--accent);}
+.page-btn:disabled{opacity:0.3;cursor:not-allowed;}
+.page-info{font-family:'DM Mono',monospace;font-size:12px;color:var(--muted);}
+
+/* Risk score bar */
+.risk-bar{
+  height:8px;border-radius:4px;
+  background:linear-gradient(90deg,var(--success),var(--warning),var(--danger));
+  position:relative;margin:8px 0;
+}
+.risk-indicator{
+  position:absolute;
+  top:-4px;
+  width:16px;height:16px;
+  background:white;border-radius:50%;
+  border:3px solid var(--accent);
+  transform:translateX(-50%);
+  transition:left 0.5s ease;
+  box-shadow:0 0 10px var(--accent);
+}
+
+/* Training section */
+.train-section{
+  display:flex;align-items:center;gap:16px;flex-wrap:wrap;margin-bottom:32px;
+}
+
+/* Tooltips */
+.tooltip-wrap{position:relative;display:inline-block;}
+.tooltip{
+  position:absolute;bottom:calc(100% + 8px);left:50%;
+  transform:translateX(-50%);
+  background:var(--surface2);border:1px solid var(--border);
+  padding:6px 10px;border-radius:6px;
+  font-size:11px;white-space:nowrap;
+  opacity:0;pointer-events:none;transition:opacity 0.2s;
+  z-index:1000;
+}
+.tooltip-wrap:hover .tooltip{opacity:1;}
+
+/* Feature importance bars */
+.fi-row{margin-bottom:12px;}
+.fi-label{
+  display:flex;justify-content:space-between;
+  font-size:12px;margin-bottom:4px;
+}
+.fi-name{font-family:'DM Mono',monospace;color:var(--text);}
+.fi-val{color:var(--muted);}
+.fi-bar{
+  height:8px;background:var(--surface2);border-radius:4px;overflow:hidden;
+}
+.fi-fill{
+  height:100%;border-radius:4px;
+  background:linear-gradient(90deg,var(--accent2),var(--accent));
+}
+
+/* Responsive */
+@media(max-width:768px){
+  .sidebar{width:60px;}
+  .logo-mark,.logo-sub,.nav-item span{display:none;}
+  .main{margin-left:60px;}
+  .page-content{padding:20px;}
+  .charts-grid{grid-template-columns:1fr;}
+}
+
+/* Animations */
+@keyframes fadeIn{from{opacity:0;transform:translateY(10px)}to{opacity:1;transform:translateY(0)}}
+.animate-in{animation:fadeIn 0.3s ease forwards;}
+
+.section-title{
+  font-family:'Syne',sans-serif;font-size:18px;font-weight:700;
+  margin-bottom:20px;
+  display:flex;align-items:center;gap:10px;
+}
+.divider{height:1px;background:var(--border);margin:24px 0;}
+.tag{
+  display:inline-block;padding:2px 8px;border-radius:4px;
+  font-family:'DM Mono',monospace;font-size:10px;
+  background:rgba(0,212,255,0.1);color:var(--accent);
+  border:1px solid rgba(0,212,255,0.2);
+}
+
+/* Not-trained overlay */
+.not-trained{
+  display:flex;flex-direction:column;align-items:center;justify-content:center;
+  padding:80px;text-align:center;
+  color:var(--muted);
+}
+.not-trained-icon{font-size:48px;margin-bottom:16px;}
+.not-trained h3{font-family:'Syne',sans-serif;font-size:20px;color:var(--text);margin-bottom:8px;}
+</style>
+</head>
+<body>
+
+<div class="layout">
+  <!-- Sidebar -->
+  <aside class="sidebar">
+    <div class="logo">
+      <div class="logo-mark">AttritionIQ</div>
+      <div class="logo-sub">HR Intelligence</div>
+    </div>
+    <nav class="nav">
+      <div class="nav-item active" onclick="navigate('dashboard')">
+        <span class="nav-icon">📊</span>
+        <span>Dashboard</span>
+      </div>
+      <div class="nav-item" onclick="navigate('train')">
+        <span class="nav-icon">🧠</span>
+        <span>Train Models</span>
+      </div>
+      <div class="nav-item" onclick="navigate('predict')">
+        <span class="nav-icon">🎯</span>
+        <span>Predict Risk</span>
+      </div>
+      <div class="nav-item" onclick="navigate('employees')">
+        <span class="nav-icon">👥</span>
+        <span>Employees</span>
+      </div>
+      <div class="nav-item" onclick="navigate('risk')">
+        <span class="nav-icon">🚨</span>
+        <span>Risk Scores</span>
+      </div>
+      <div class="nav-item" onclick="navigate('models')">
+        <span class="nav-icon">⚙️</span>
+        <span>Model Results</span>
+      </div>
+      <div class="nav-item" onclick="navigate('insights')">
+        <span class="nav-icon">💡</span>
+        <span>HR Insights</span>
+      </div>
+    </nav>
+    <div class="sidebar-status">
+      <span class="status-dot" id="statusDot"></span>
+      <span class="status-text" id="statusText">Disconnected</span>
+    </div>
+  </aside>
+
+  <!-- Main -->
+  <main class="main">
+    <div class="topbar">
+      <div class="page-title" id="pageTitle">Dashboard</div>
+      <div style="display:flex;align-items:center;gap:12px">
+        <span class="tag" id="apiStatus">API: Checking...</span>
+        <button class="btn btn-secondary btn-sm" onclick="refreshStatus()">↻ Refresh</button>
+      </div>
+    </div>
+
+    <div class="page-content">
+
+      <!-- ── PAGE: Dashboard ── -->
+      <div id="page-dashboard" class="page active">
+        <div id="dash-untrained" class="not-trained">
+          <div class="not-trained-icon">🤖</div>
+          <h3>No Models Trained Yet</h3>
+          <p style="margin-bottom:20px">Go to <strong>Train Models</strong> to generate data and train the ML pipeline.</p>
+          <button class="btn btn-primary" onclick="navigate('train')">Start Training →</button>
+        </div>
+        <div id="dash-content" style="display:none">
+          <div class="stats-grid" id="statsGrid"></div>
+          <div class="charts-grid">
+            <div class="card">
+              <div class="card-title">Risk Distribution</div>
+              <div class="chart-box"><canvas id="riskPieChart"></canvas></div>
+            </div>
+            <div class="card">
+              <div class="card-title">Attrition by Department</div>
+              <div class="chart-box"><canvas id="deptChart"></canvas></div>
+            </div>
+          </div>
+          <div class="card">
+            <div class="card-title">Feature Importance — <span id="bestModelLabel">Best Model</span></div>
+            <div id="featureImportanceList"></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAGE: Train ── -->
+      <div id="page-train" class="page">
+        <div class="section-title">🧠 ML Pipeline Configuration</div>
+        <div class="card" style="margin-bottom:24px">
+          <div class="card-title">Dataset Settings</div>
+          <div style="display:flex;align-items:flex-end;gap:20px;flex-wrap:wrap">
+            <div class="form-group">
+              <label>Number of Employees</label>
+              <input type="number" id="nEmployees" value="1000" min="200" max="10000" style="width:160px"/>
+            </div>
+            <button class="btn btn-primary" id="trainBtn" onclick="trainModels()">
+              <span>🚀 Train Pipeline</span>
+            </button>
+          </div>
+          <div style="margin-top:16px;font-size:13px;color:var(--muted)">
+            Modules: Data Generation → Preprocessing → Feature Engineering → Model Training (LR, DT, RF, GB) → Risk Scoring
+          </div>
+        </div>
+
+        <div class="card" style="margin-bottom:24px">
+          <div class="card-title">Pipeline Modules</div>
+          <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(180px,1fr));gap:12px">
+            <div class="module-step" id="step-data">
+              <div style="font-size:24px;margin-bottom:8px">📦</div>
+              <div style="font-weight:600;font-size:13px">Data Generator</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Simulated workforce dataset</div>
+              <div class="badge badge-low" id="badge-data" style="margin-top:8px;display:none">✓ Done</div>
+            </div>
+            <div class="module-step" id="step-prep">
+              <div style="font-size:24px;margin-bottom:8px">🔧</div>
+              <div style="font-weight:600;font-size:13px">Preprocessor</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Encode, scale, engineer features</div>
+              <div class="badge badge-low" id="badge-prep" style="margin-top:8px;display:none">✓ Done</div>
+            </div>
+            <div class="module-step" id="step-models">
+              <div style="font-size:24px;margin-bottom:8px">🤖</div>
+              <div style="font-weight:600;font-size:13px">Model Trainer</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">LR · DT · RF · Gradient Boost</div>
+              <div class="badge badge-low" id="badge-models" style="margin-top:8px;display:none">✓ Done</div>
+            </div>
+            <div class="module-step" id="step-risk">
+              <div style="font-size:24px;margin-bottom:8px">🎯</div>
+              <div style="font-weight:600;font-size:13px">Risk Scorer</div>
+              <div style="font-size:11px;color:var(--muted);margin-top:4px">Risk scores + HR insights</div>
+              <div class="badge badge-low" id="badge-risk" style="margin-top:8px;display:none">✓ Done</div>
+            </div>
+          </div>
+        </div>
+
+        <div class="card" id="trainResults" style="display:none">
+          <div class="card-title">Training Results</div>
+          <div id="trainResultsContent"></div>
+        </div>
+      </div>
+
+      <!-- ── PAGE: Predict ── -->
+      <div id="page-predict" class="page">
+        <div class="section-title">🎯 Employee Risk Predictor</div>
+        <div style="display:grid;grid-template-columns:1fr 1fr;gap:24px;align-items:start">
+          <div class="card">
+            <div class="card-title">Employee Details</div>
+            <div class="form-grid" style="grid-template-columns:1fr 1fr">
+              <div class="form-group">
+                <label>Employee ID</label>
+                <input type="text" id="p_id" value="EMP9999"/>
+              </div>
+              <div class="form-group">
+                <label>Age</label>
+                <input type="number" id="p_age" value="32" min="18" max="65"/>
+              </div>
+              <div class="form-group">
+                <label>Department</label>
+                <select id="p_dept">
+                  <option>Engineering</option><option>Sales</option><option>HR</option>
+                  <option>Finance</option><option>Marketing</option><option>Operations</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Job Role</label>
+                <select id="p_role">
+                  <option>Software Engineer</option><option>Sales Representative</option>
+                  <option>HR Specialist</option><option>Financial Analyst</option>
+                  <option>Marketing Analyst</option><option>Operations Analyst</option>
+                  <option>Data Analyst</option><option>Account Manager</option>
+                </select>
+              </div>
+              <div class="form-group">
+                <label>Salary ($)</label>
+                <input type="number" id="p_salary" value="55000"/>
+              </div>
+              <div class="form-group">
+                <label>Years at Company</label>
+                <input type="number" id="p_years" value="3" min="0" max="40"/>
+              </div>
+              <div class="form-group">
+                <label>Performance Rating (1-5)</label>
+                <input type="number" id="p_perf" value="3.5" step="0.1" min="1" max="5"/>
+              </div>
+              <div class="form-group">
+                <label>Job Satisfaction (1-5)</label>
+                <input type="number" id="p_sat" value="3.0" step="0.1" min="1" max="5"/>
+              </div>
+              <div class="form-group">
+                <label>Work Hours/Week</label>
+                <input type="number" id="p_hours" value="45" min="30" max="80"/>
+              </div>
+              <div class="form-group">
+                <label>Promotions</label>
+                <input type="number" id="p_promo" value="1" min="0" max="10"/>
+              </div>
+            </div>
+            <div style="margin-top:20px">
+              <button class="btn btn-primary" onclick="predictRisk()" id="predictBtn">
+                🔍 Predict Attrition Risk
+              </button>
+            </div>
+          </div>
+
+          <div class="card" id="resultCard" style="display:none">
+            <div class="card-title">Risk Assessment</div>
+            <div class="gauge-wrap">
+              <svg viewBox="0 0 200 120" style="width:200px">
+                <path d="M20,110 A90,90 0 0,1 180,110" fill="none" stroke="#1e2d45" stroke-width="16" stroke-linecap="round"/>
+                <path id="gaugeFill" d="M20,110 A90,90 0 0,1 180,110" fill="none" stroke="url(#gaugeGrad)" stroke-width="16" stroke-linecap="round" stroke-dasharray="0 283"/>
+                <defs>
+                  <linearGradient id="gaugeGrad" x1="0%" y1="0%" x2="100%" y2="0%">
+                    <stop offset="0%" stop-color="#2ed573"/>
+                    <stop offset="50%" stop-color="#ffa502"/>
+                    <stop offset="100%" stop-color="#ff4757"/>
+                  </linearGradient>
+                </defs>
+              </svg>
+              <div class="gauge-number" id="gaugeNumber" style="margin-top:-30px">—</div>
+              <div class="gauge-label">Risk Score / 100</div>
+              <div style="margin-top:12px" id="riskBadgeResult"></div>
+            </div>
+
+            <div class="divider"></div>
+            <div style="margin-bottom:12px">
+              <div style="font-size:12px;color:var(--muted);margin-bottom:4px;font-family:'DM Mono',monospace">RISK BAR</div>
+              <div class="risk-bar">
+                <div class="risk-indicator" id="riskIndicator" style="left:0%"></div>
+              </div>
+              <div style="display:flex;justify-content:space-between;font-size:10px;color:var(--muted);font-family:'DM Mono',monospace;margin-top:4px">
+                <span>LOW</span><span>MEDIUM</span><span>HIGH</span>
+              </div>
+            </div>
+
+            <div class="divider"></div>
+            <div>
+              <div class="card-title">HR Insights</div>
+              <div id="insightsList"></div>
+            </div>
+          </div>
+
+          <div class="card" id="notTrainedPredict" style="text-align:center;padding:40px">
+            <div style="font-size:36px;margin-bottom:12px">🧠</div>
+            <p style="color:var(--muted)">Train the models first to enable predictions.</p>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAGE: Employees ── -->
+      <div id="page-employees" class="page">
+        <div class="section-title" style="justify-content:space-between">
+          <span>👥 Employee Dataset</span>
+          <span class="tag" id="empCount">—</span>
+        </div>
+        <div id="emp-untrained" class="not-trained">
+          <div class="not-trained-icon">📂</div>
+          <h3>No Dataset Available</h3>
+          <p style="margin-bottom:20px">Train the models to generate and view the dataset.</p>
+          <button class="btn btn-primary" onclick="navigate('train')">Train Models →</button>
+        </div>
+        <div id="emp-content" style="display:none">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr>
+                  <th>ID</th><th>Age</th><th>Department</th><th>Job Role</th>
+                  <th>Salary</th><th>Years</th><th>Performance</th>
+                  <th>Satisfaction</th><th>Work Hrs</th><th>Promotions</th><th>Attrition</th>
+                </tr>
+              </thead>
+              <tbody id="empTableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="page-btn" id="empPrevBtn" onclick="empPage(-1)">← Prev</button>
+            <span class="page-info" id="empPageInfo">Page 1</span>
+            <button class="page-btn" id="empNextBtn" onclick="empPage(1)">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAGE: Risk Scores ── -->
+      <div id="page-risk" class="page">
+        <div class="section-title" style="justify-content:space-between">
+          <span>🚨 Employee Risk Scores</span>
+          <div style="display:flex;gap:8px">
+            <button class="btn btn-secondary btn-sm" onclick="filterRisk(null)">All</button>
+            <button class="btn btn-sm" style="background:rgba(255,71,87,0.2);color:var(--danger);border:1px solid rgba(255,71,87,0.3)" onclick="filterRisk('High')">High</button>
+            <button class="btn btn-sm" style="background:rgba(255,165,2,0.2);color:var(--warning);border:1px solid rgba(255,165,2,0.3)" onclick="filterRisk('Medium')">Medium</button>
+            <button class="btn btn-sm" style="background:rgba(46,213,115,0.2);color:var(--success);border:1px solid rgba(46,213,115,0.3)" onclick="filterRisk('Low')">Low</button>
+          </div>
+        </div>
+        <div id="risk-untrained" class="not-trained">
+          <div class="not-trained-icon">🚨</div>
+          <h3>No Risk Scores Available</h3>
+          <button class="btn btn-primary" onclick="navigate('train')" style="margin-top:16px">Train Models →</button>
+        </div>
+        <div id="risk-content" style="display:none">
+          <div class="table-wrap">
+            <table>
+              <thead>
+                <tr><th>Employee ID</th><th>Department</th><th>Job Role</th><th>Risk Score</th><th>Risk Level</th><th>Probability</th><th>Prediction</th></tr>
+              </thead>
+              <tbody id="riskTableBody"></tbody>
+            </table>
+          </div>
+          <div class="pagination">
+            <button class="page-btn" id="riskPrevBtn" onclick="riskPage(-1)">← Prev</button>
+            <span class="page-info" id="riskPageInfo">Page 1</span>
+            <button class="page-btn" id="riskNextBtn" onclick="riskPage(1)">Next →</button>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAGE: Model Results ── -->
+      <div id="page-models" class="page">
+        <div class="section-title">⚙️ Model Comparison</div>
+        <div id="models-untrained" class="not-trained">
+          <div class="not-trained-icon">⚙️</div>
+          <h3>No Model Results Yet</h3>
+          <button class="btn btn-primary" onclick="navigate('train')" style="margin-top:16px">Train Models →</button>
+        </div>
+        <div id="models-content" style="display:none">
+          <div class="model-grid" id="modelGrid"></div>
+          <div class="divider"></div>
+          <div class="card">
+            <div class="card-title">ROC Curves</div>
+            <div class="chart-box" style="height:340px"><canvas id="rocChart"></canvas></div>
+          </div>
+        </div>
+      </div>
+
+      <!-- ── PAGE: HR Insights ── -->
+      <div id="page-insights" class="page">
+        <div class="section-title">💡 HR Analytics & Insights</div>
+        <div id="insights-untrained" class="not-trained">
+          <div class="not-trained-icon">💡</div>
+          <h3>No Insights Available</h3>
+          <button class="btn btn-primary" onclick="navigate('train')" style="margin-top:16px">Train Models →</button>
+        </div>
+        <div id="insights-content" style="display:none">
+          <div class="card" style="margin-bottom:24px">
+            <div class="card-title">Department Risk Summary</div>
+            <div class="table-wrap">
+              <table>
+                <thead><tr><th>Department</th><th>Avg Risk Score</th><th>High Risk Employees</th><th>Total Employees</th><th>Risk %</th></tr></thead>
+                <tbody id="deptSummaryBody"></tbody>
+              </table>
+            </div>
+          </div>
+          <div class="card" style="margin-bottom:24px">
+            <div class="card-title">Recommended Actions</div>
+            <div id="recommendationsList"></div>
+          </div>
+          <div class="card">
+            <div class="card-title">Key Attrition Drivers</div>
+            <div id="driversList"></div>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- page-content -->
+  </main>
+</div><!-- layout -->
+
+<!-- Footer -->
+<footer style="
+  margin-left:240px;
+  background:var(--surface);
+  border-top:1px solid var(--border);
+  padding:20px 40px;
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  flex-wrap:wrap;
+  gap:12px;
+  position:relative;
+  z-index:1;
+">
+  <div style="display:flex;align-items:center;gap:14px">
+    <div style="
+      width:38px;height:38px;border-radius:50%;
+      background:linear-gradient(135deg,var(--accent),var(--accent2));
+      display:flex;align-items:center;justify-content:center;
+      font-family:'Syne',sans-serif;font-weight:800;font-size:14px;color:#000;
+      flex-shrink:0;
+    ">AH</div>
+    <div>
+      <div style="font-family:'Syne',sans-serif;font-weight:700;font-size:14px;color:var(--text)">Aneeq Hussain</div>
+      <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--accent);letter-spacing:0.5px;margin-top:1px">
+        AI Engineer &nbsp;·&nbsp; Data Scientist &nbsp;·&nbsp; Medical Billing Professional
+      </div>
+    </div>
+  </div>
+
+  <div style="font-size:12px;color:var(--muted);text-align:center;max-width:420px;line-height:1.6">
+    Leveraging data, automation, and analytics to create smarter healthcare and business systems.
+  </div>
+
+  <div style="display:flex;flex-direction:column;align-items:flex-end;gap:8px">
+    <div style="display:flex;gap:10px">
+      <a href="https://linkedin.com/in/aneeq-hussain" target="_blank" style="
+        display:inline-flex;align-items:center;gap:6px;
+        padding:6px 14px;border-radius:20px;
+        background:rgba(0,119,181,0.15);
+        border:1px solid rgba(0,119,181,0.4);
+        color:#4fa8d5;
+        font-family:'DM Mono',monospace;font-size:11px;
+        text-decoration:none;transition:all 0.2s;
+      " onmouseover="this.style.background='rgba(0,119,181,0.3)';this.style.borderColor='rgba(0,119,181,0.7)'"
+         onmouseout="this.style.background='rgba(0,119,181,0.15)';this.style.borderColor='rgba(0,119,181,0.4)'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M20.447 20.452h-3.554v-5.569c0-1.328-.027-3.037-1.852-3.037-1.853 0-2.136 1.445-2.136 2.939v5.667H9.351V9h3.414v1.561h.046c.477-.9 1.637-1.85 3.37-1.85 3.601 0 4.267 2.37 4.267 5.455v6.286zM5.337 7.433a2.062 2.062 0 01-2.063-2.065 2.064 2.064 0 112.063 2.065zm1.782 13.019H3.555V9h3.564v11.452zM22.225 0H1.771C.792 0 0 .774 0 1.729v20.542C0 23.227.792 24 1.771 24h20.451C23.2 24 24 23.227 24 22.271V1.729C24 .774 23.2 0 22.222 0h.003z"/>
+        </svg>
+        LinkedIn
+      </a>
+      <a href="https://github.com/aneeqhussain" target="_blank" style="
+        display:inline-flex;align-items:center;gap:6px;
+        padding:6px 14px;border-radius:20px;
+        background:rgba(255,255,255,0.05);
+        border:1px solid rgba(255,255,255,0.15);
+        color:#c9d1d9;
+        font-family:'DM Mono',monospace;font-size:11px;
+        text-decoration:none;transition:all 0.2s;
+      " onmouseover="this.style.background='rgba(255,255,255,0.12)';this.style.borderColor='rgba(255,255,255,0.3)'"
+         onmouseout="this.style.background='rgba(255,255,255,0.05)';this.style.borderColor='rgba(255,255,255,0.15)'">
+        <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor">
+          <path d="M12 0C5.374 0 0 5.373 0 12c0 5.302 3.438 9.8 8.207 11.387.599.111.793-.261.793-.577v-2.234c-3.338.726-4.033-1.416-4.033-1.416-.546-1.387-1.333-1.756-1.333-1.756-1.089-.745.083-.729.083-.729 1.205.084 1.839 1.237 1.839 1.237 1.07 1.834 2.807 1.304 3.492.997.107-.775.418-1.305.762-1.604-2.665-.305-5.467-1.334-5.467-5.931 0-1.311.469-2.381 1.236-3.221-.124-.303-.535-1.524.117-3.176 0 0 1.008-.322 3.301 1.23A11.509 11.509 0 0112 5.803c1.02.005 2.047.138 3.006.404 2.291-1.552 3.297-1.23 3.297-1.23.653 1.653.242 2.874.118 3.176.77.84 1.235 1.911 1.235 3.221 0 4.609-2.807 5.624-5.479 5.921.43.372.823 1.102.823 2.222v3.293c0 .319.192.694.801.576C20.566 21.797 24 17.3 24 12c0-6.627-5.373-12-12-12z"/>
+        </svg>
+        GitHub
+      </a>
+    </div>
+    <div style="font-family:'DM Mono',monospace;font-size:10px;color:var(--muted)">
+      © 2026 Aneeq Hussain &mdash; All rights reserved
+    </div>
+  </div>
+</footer>
+
+<script>
+// ── Config ────────────────────────────────────────────────────────────────────
+const API = 'http://localhost:5000/api';
+
+// ── State ─────────────────────────────────────────────────────────────────────
+let state = {
+  trained: false,
+  overview: null,
+  modelResults: null,
+  fi: null,
+  empPage: 1,
+  riskPage: 1,
+  riskFilter: null,
+  chartRisk: null,
+  chartDept: null,
+  chartRoc: null,
+};
+
+// ── Navigation ────────────────────────────────────────────────────────────────
+function navigate(page) {
+  document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+  document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+  document.getElementById('page-' + page).classList.add('active');
+  document.querySelectorAll('.nav-item').forEach(n => {
+    if (n.getAttribute('onclick')?.includes(page)) n.classList.add('active');
+  });
+  const titles = {
+    dashboard:'Dashboard',train:'Train Models',predict:'Predict Risk',
+    employees:'Employees',risk:'Risk Scores',models:'Model Results',insights:'HR Insights'
+  };
+  document.getElementById('pageTitle').textContent = titles[page] || page;
+
+  if (page === 'employees' && state.trained) loadEmployees();
+  if (page === 'risk' && state.trained) loadRiskScores();
+  if (page === 'models' && state.trained) loadModelResults();
+  if (page === 'insights' && state.trained) loadInsights();
+  if (page === 'predict') {
+    document.getElementById('resultCard').style.display = 'none';
+    document.getElementById('notTrainedPredict').style.display = state.trained ? 'none' : '';
+  }
+}
+
+// ── API helpers ────────────────────────────────────────────────────────────────
+async function api(path, opts = {}) {
+  const r = await fetch(API + path, {
+    headers: {'Content-Type':'application/json'},
+    ...opts
+  });
+  return r.json();
+}
+
+// ── Status ────────────────────────────────────────────────────────────────────
+async function refreshStatus() {
+  try {
+    const data = await api('/status');
+    document.getElementById('apiStatus').textContent = 'API: Online';
+    document.getElementById('apiStatus').style.background = 'rgba(46,213,115,0.1)';
+    document.getElementById('apiStatus').style.color = '#2ed573';
+    document.getElementById('apiStatus').style.borderColor = 'rgba(46,213,115,0.3)';
+    document.getElementById('statusDot').className = 'status-dot ready';
+    document.getElementById('statusText').textContent = 'Connected';
+
+    if (data.models_trained) {
+      state.trained = true;
+      await loadDashboard();
+    }
+  } catch(e) {
+    document.getElementById('apiStatus').textContent = 'API: Offline';
+    document.getElementById('statusText').textContent = 'Offline';
+  }
+}
+
+// ── Train ─────────────────────────────────────────────────────────────────────
+async function trainModels() {
+  const btn = document.getElementById('trainBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Training...';
+
+  // Animate steps
+  const steps = ['data','prep','models','risk'];
+  for (let s of steps) {
+    document.getElementById('badge-'+s).style.display = 'none';
+  }
+
+  try {
+    const n = parseInt(document.getElementById('nEmployees').value);
+
+    // Fake progress animation
+    for (let i = 0; i < steps.length; i++) {
+      await new Promise(r => setTimeout(r, 400));
+      document.getElementById('badge-'+steps[i]).style.display = 'inline-flex';
+    }
+
+    const data = await api('/train', {
+      method:'POST',
+      body: JSON.stringify({n_employees: n})
+    });
+
+    state.trained = true;
+    document.getElementById('statusDot').className = 'status-dot ready';
+
+    // Show results
+    const rc = document.getElementById('trainResults');
+    rc.style.display = 'block';
+    const best = data.best_model;
+    const res = data.model_results[best];
+    document.getElementById('trainResultsContent').innerHTML = `
+      <div class="alert alert-success">✅ Training complete! Best model: <strong>${best}</strong> — ROC-AUC: ${res.roc_auc}</div>
+      <div style="display:grid;grid-template-columns:repeat(auto-fill,minmax(140px,1fr));gap:12px;margin-top:16px">
+        ${Object.entries(data.model_results).map(([name,r]) => `
+          <div class="model-card ${name===best?'best':''}">
+            <div class="model-name" style="font-size:13px">${name}${name===best?' 🏆':''}</div>
+            <div class="metric-row"><span class="metric-name">Accuracy</span><span class="metric-val">${(r.accuracy*100).toFixed(1)}%</span></div>
+            <div class="metric-row"><span class="metric-name">F1</span><span class="metric-val">${r.f1}</span></div>
+            <div class="metric-row"><span class="metric-name">ROC-AUC</span><span class="metric-val">${r.roc_auc}</span></div>
+          </div>
+        `).join('')}
+      </div>
+    `;
+
+    await loadDashboard();
+
+  } catch(e) {
+    document.getElementById('trainResultsContent').innerHTML =
+      `<div class="alert alert-danger">❌ Error: ${e.message}. Make sure the Flask backend is running on port 5000.</div>`;
+    document.getElementById('trainResults').style.display = 'block';
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '<span>🚀 Train Pipeline</span>';
+}
+
+// ── Dashboard ─────────────────────────────────────────────────────────────────
+async function loadDashboard() {
+  try {
+    const [overview, fi] = await Promise.all([
+      api('/analytics/overview'),
+      api('/model/feature-importance'),
+    ]);
+    state.overview = overview;
+    state.fi = fi;
+
+    document.getElementById('dash-untrained').style.display = 'none';
+    document.getElementById('dash-content').style.display = 'block';
+
+    // Stats
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card" style="--accent-line:linear-gradient(90deg,#00d4ff,#7b61ff)">
+        <div class="stat-label">Total Employees</div>
+        <div class="stat-value">${overview.total_employees}</div>
+        <div class="stat-sub">In dataset</div>
+      </div>
+      <div class="stat-card" style="--accent-line:linear-gradient(90deg,#ff4757,#ff6b81)">
+        <div class="stat-label">Attrition Rate</div>
+        <div class="stat-value" style="color:var(--danger)">${overview.attrition_rate}%</div>
+        <div class="stat-sub">Would leave</div>
+      </div>
+      <div class="stat-card" style="--accent-line:linear-gradient(90deg,#ff4757,#ff4757)">
+        <div class="stat-label">High Risk</div>
+        <div class="stat-value" style="color:var(--danger)">${overview.high_risk}</div>
+        <div class="stat-sub">Immediate attention</div>
+      </div>
+      <div class="stat-card" style="--accent-line:linear-gradient(90deg,#ffa502,#ffa502)">
+        <div class="stat-label">Medium Risk</div>
+        <div class="stat-value" style="color:var(--warning)">${overview.medium_risk}</div>
+        <div class="stat-sub">Monitor closely</div>
+      </div>
+      <div class="stat-card" style="--accent-line:linear-gradient(90deg,#2ed573,#2ed573)">
+        <div class="stat-label">Low Risk</div>
+        <div class="stat-value" style="color:var(--success)">${overview.low_risk}</div>
+        <div class="stat-sub">Stable employees</div>
+      </div>
+      <div class="stat-card" style="--accent-line:linear-gradient(90deg,#7b61ff,#00d4ff)">
+        <div class="stat-label">Avg Risk Score</div>
+        <div class="stat-value">${overview.avg_risk_score}</div>
+        <div class="stat-sub">Out of 100</div>
+      </div>
+    `;
+
+    // Risk Pie
+    if (state.chartRisk) state.chartRisk.destroy();
+    state.chartRisk = new Chart(document.getElementById('riskPieChart'), {
+      type: 'doughnut',
+      data: {
+        labels: ['High Risk','Medium Risk','Low Risk'],
+        datasets: [{
+          data: [overview.high_risk, overview.medium_risk, overview.low_risk],
+          backgroundColor: ['rgba(255,71,87,0.8)','rgba(255,165,2,0.8)','rgba(46,213,115,0.8)'],
+          borderColor: ['#ff4757','#ffa502','#2ed573'],
+          borderWidth: 2,
+        }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins: {legend:{labels:{color:'#6b7fa3',font:{family:'DM Mono'}}}},
+        cutout: '60%',
+      }
+    });
+
+    // Dept chart
+    const depts = overview.attrition_by_department;
+    if (state.chartDept) state.chartDept.destroy();
+    state.chartDept = new Chart(document.getElementById('deptChart'), {
+      type:'bar',
+      data: {
+        labels: Object.keys(depts),
+        datasets: [{
+          label:'Attrition Rate (%)',
+          data: Object.values(depts),
+          backgroundColor:'rgba(0,212,255,0.3)',
+          borderColor:'#00d4ff',
+          borderWidth:2,
+          borderRadius:6,
+        }]
+      },
+      options: {
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{display:false}},
+        scales:{
+          x:{ticks:{color:'#6b7fa3',font:{family:'DM Mono',size:10}},grid:{color:'rgba(30,45,69,0.5)'}},
+          y:{ticks:{color:'#6b7fa3',font:{family:'DM Mono',size:10}},grid:{color:'rgba(30,45,69,0.5)'}},
+        }
+      }
+    });
+
+    // Feature importance
+    const fiEntries = Object.entries(fi).slice(0,10);
+    const maxVal = fiEntries[0]?.[1] || 1;
+    document.getElementById('featureImportanceList').innerHTML = fiEntries.map(([name,val]) => `
+      <div class="fi-row">
+        <div class="fi-label">
+          <span class="fi-name">${name}</span>
+          <span class="fi-val">${(val*100).toFixed(1)}%</span>
+        </div>
+        <div class="fi-bar">
+          <div class="fi-fill" style="width:${(val/maxVal*100).toFixed(1)}%"></div>
+        </div>
+      </div>
+    `).join('');
+
+  } catch(e) {
+    console.error('Dashboard error:', e);
+  }
+}
+
+// ── Predict ────────────────────────────────────────────────────────────────────
+async function predictRisk() {
+  if (!state.trained) {
+    alert('Please train models first!');
+    return;
+  }
+  const btn = document.getElementById('predictBtn');
+  btn.disabled = true;
+  btn.innerHTML = '<span class="loader"></span> Predicting...';
+
+  try {
+    const payload = {
+      EmployeeID: document.getElementById('p_id').value,
+      Age: +document.getElementById('p_age').value,
+      Department: document.getElementById('p_dept').value,
+      JobRole: document.getElementById('p_role').value,
+      Salary: +document.getElementById('p_salary').value,
+      YearsAtCompany: +document.getElementById('p_years').value,
+      PerformanceRating: +document.getElementById('p_perf').value,
+      JobSatisfaction: +document.getElementById('p_sat').value,
+      WorkHours: +document.getElementById('p_hours').value,
+      Promotions: +document.getElementById('p_promo').value,
+    };
+
+    const result = await api('/predict', {method:'POST', body:JSON.stringify(payload)});
+
+    // Show result card
+    document.getElementById('resultCard').style.display = 'block';
+    document.getElementById('notTrainedPredict').style.display = 'none';
+
+    const score = result.risk_score;
+    document.getElementById('gaugeNumber').textContent = score.toFixed(0);
+    document.getElementById('gaugeNumber').style.color =
+      score < 33 ? 'var(--success)' : score < 66 ? 'var(--warning)' : 'var(--danger)';
+
+    // Animate gauge
+    const circum = 283;
+    const fill = (score / 100) * circum;
+    document.getElementById('gaugeFill').style.strokeDasharray = `${fill} ${circum}`;
+
+    // Risk indicator
+    document.getElementById('riskIndicator').style.left = score + '%';
+
+    // Badge
+    const lvl = result.risk_level;
+    document.getElementById('riskBadgeResult').innerHTML =
+      `<span class="badge badge-${lvl.toLowerCase()}">● ${lvl} Risk</span>`;
+
+    // Insights
+    document.getElementById('insightsList').innerHTML = result.insights.map(i =>
+      `<div class="alert alert-${i.includes('✅')?'success':i.includes('🚨')?'danger':i.includes('⚠️')||i.includes('🔍')?'warning':'info'}">${i}</div>`
+    ).join('');
+
+  } catch(e) {
+    alert('Prediction failed. Ensure backend is running: ' + e.message);
+  }
+
+  btn.disabled = false;
+  btn.innerHTML = '🔍 Predict Attrition Risk';
+}
+
+// ── Employees table ────────────────────────────────────────────────────────────
+async function loadEmployees() {
+  try {
+    const data = await api(`/dataset?page=${state.empPage}&page_size=15`);
+    document.getElementById('emp-untrained').style.display = 'none';
+    document.getElementById('emp-content').style.display = 'block';
+    document.getElementById('empCount').textContent = data.total + ' employees';
+
+    document.getElementById('empTableBody').innerHTML = data.data.map(r => `
+      <tr>
+        <td><code style="font-family:'DM Mono';font-size:11px;color:var(--accent)">${r.EmployeeID}</code></td>
+        <td>${r.Age}</td>
+        <td>${r.Department}</td>
+        <td style="font-size:12px">${r.JobRole}</td>
+        <td>$${r.Salary.toLocaleString()}</td>
+        <td>${r.YearsAtCompany}</td>
+        <td>${r.PerformanceRating}</td>
+        <td>${r.JobSatisfaction}</td>
+        <td>${r.WorkHours}</td>
+        <td>${r.Promotions}</td>
+        <td><span class="badge ${r.Attrition==='Yes'?'badge-high':'badge-low'}">${r.Attrition}</span></td>
+      </tr>
+    `).join('');
+
+    const pages = Math.ceil(data.total / 15);
+    document.getElementById('empPageInfo').textContent = `Page ${state.empPage} / ${pages}`;
+    document.getElementById('empPrevBtn').disabled = state.empPage <= 1;
+    document.getElementById('empNextBtn').disabled = state.empPage >= pages;
+  } catch(e) {}
+}
+function empPage(dir) {
+  state.empPage = Math.max(1, state.empPage + dir);
+  loadEmployees();
+}
+
+// ── Risk Scores table ──────────────────────────────────────────────────────────
+async function loadRiskScores() {
+  try {
+    const filter = state.riskFilter ? `&risk_level=${state.riskFilter}` : '';
+    const data = await api(`/risk/scores?page=${state.riskPage}&page_size=15${filter}`);
+    document.getElementById('risk-untrained').style.display = 'none';
+    document.getElementById('risk-content').style.display = 'block';
+
+    document.getElementById('riskTableBody').innerHTML = data.data.map(r => `
+      <tr>
+        <td><code style="font-family:'DM Mono';font-size:11px;color:var(--accent)">${r.EmployeeID}</code></td>
+        <td>${r.Department}</td>
+        <td style="font-size:12px">${r.JobRole}</td>
+        <td>
+          <div style="display:flex;align-items:center;gap:8px">
+            <div class="progress"><div class="progress-fill" style="width:${r.RiskScore}%;background:${r.RiskScore>66?'var(--danger)':r.RiskScore>33?'var(--warning)':'var(--success)'}"></div></div>
+            <span style="font-family:'DM Mono';font-size:12px">${r.RiskScore}</span>
+          </div>
+        </td>
+        <td><span class="badge badge-${r.RiskLevel.toLowerCase()}">${r.RiskLevel}</span></td>
+        <td style="font-family:'DM Mono';font-size:12px">${(r.AttritionProbability*100).toFixed(1)}%</td>
+        <td><span class="badge ${r.Prediction==='Yes'?'badge-high':'badge-low'}">${r.Prediction}</span></td>
+      </tr>
+    `).join('');
+
+    const pages = Math.ceil(data.total / 15);
+    document.getElementById('riskPageInfo').textContent = `Page ${state.riskPage} / ${pages} (${data.total} total)`;
+    document.getElementById('riskPrevBtn').disabled = state.riskPage <= 1;
+    document.getElementById('riskNextBtn').disabled = state.riskPage >= pages;
+  } catch(e) {}
+}
+function filterRisk(level) {
+  state.riskFilter = level;
+  state.riskPage = 1;
+  loadRiskScores();
+}
+function riskPage(dir) {
+  state.riskPage = Math.max(1, state.riskPage + dir);
+  loadRiskScores();
+}
+
+// ── Model Results ──────────────────────────────────────────────────────────────
+async function loadModelResults() {
+  try {
+    const [mr, roc] = await Promise.all([api('/model/results'), api('/model/roc')]);
+    document.getElementById('models-untrained').style.display = 'none';
+    document.getElementById('models-content').style.display = 'block';
+
+    document.getElementById('modelGrid').innerHTML = Object.entries(mr.results).map(([name,r]) => `
+      <div class="model-card ${name===mr.best_model?'best':''}">
+        <div class="model-name">${name} ${name===mr.best_model?'🏆':''}</div>
+        ${name===mr.best_model?'<div class="badge badge-low" style="margin-bottom:12px">Best Model</div>':''}
+        <div class="metric-row"><span class="metric-name">Accuracy</span><span class="metric-val">${(r.accuracy*100).toFixed(1)}%</span></div>
+        <div class="metric-row"><span class="metric-name">Precision</span><span class="metric-val">${(r.precision*100).toFixed(1)}%</span></div>
+        <div class="metric-row"><span class="metric-name">Recall</span><span class="metric-val">${(r.recall*100).toFixed(1)}%</span></div>
+        <div class="metric-row"><span class="metric-name">F1-Score</span><span class="metric-val">${r.f1}</span></div>
+        <div class="metric-row"><span class="metric-name">ROC-AUC</span><span class="metric-val" style="color:var(--accent)">${r.roc_auc}</span></div>
+        <div style="margin-top:12px">
+          <div style="font-size:10px;color:var(--muted);font-family:'DM Mono';margin-bottom:6px">CONFUSION MATRIX</div>
+          <div style="display:grid;grid-template-columns:1fr 1fr;gap:4px;max-width:120px">
+            ${r.confusion_matrix.flat().map((v,i) => `
+              <div style="background:${i===0||i===3?'rgba(46,213,115,0.2)':'rgba(255,71,87,0.2)'};
+                padding:6px;border-radius:4px;text-align:center;font-family:'DM Mono';font-size:13px">${v}</div>
+            `).join('')}
+          </div>
+        </div>
+      </div>
+    `).join('');
+
+    // ROC Chart
+    const colors = ['#00d4ff','#7b61ff','#2ed573','#ffa502'];
+    if (state.chartRoc) state.chartRoc.destroy();
+    state.chartRoc = new Chart(document.getElementById('rocChart'), {
+      type:'line',
+      data:{
+        datasets: [
+          {label:'Random Classifier',data:[{x:0,y:0},{x:1,y:1}],borderColor:'rgba(107,127,163,0.5)',borderDash:[5,5],pointRadius:0,borderWidth:1},
+          ...Object.entries(roc).map(([name,d],i) => ({
+            label:`${name} (AUC=${d.auc})`,
+            data: d.fpr.map((f,j) => ({x:f, y:d.tpr[j]})),
+            borderColor: colors[i],
+            backgroundColor: 'transparent',
+            borderWidth:2, pointRadius:0, tension:0.1,
+          }))
+        ]
+      },
+      options:{
+        responsive:true, maintainAspectRatio:false,
+        plugins:{legend:{labels:{color:'#6b7fa3',font:{family:'DM Mono',size:10}}}},
+        scales:{
+          x:{title:{display:true,text:'False Positive Rate',color:'#6b7fa3'},ticks:{color:'#6b7fa3'},grid:{color:'rgba(30,45,69,0.5)'}},
+          y:{title:{display:true,text:'True Positive Rate',color:'#6b7fa3'},ticks:{color:'#6b7fa3'},grid:{color:'rgba(30,45,69,0.5)'}},
+        }
+      }
+    });
+  } catch(e) {}
+}
+
+// ── Insights ───────────────────────────────────────────────────────────────────
+async function loadInsights() {
+  try {
+    const [deptSum, fi] = await Promise.all([
+      api('/risk/department-summary'),
+      api('/model/feature-importance'),
+    ]);
+    document.getElementById('insights-untrained').style.display = 'none';
+    document.getElementById('insights-content').style.display = 'block';
+
+    document.getElementById('deptSummaryBody').innerHTML = deptSum.map(d => `
+      <tr>
+        <td>${d.Department}</td>
+        <td style="font-family:'DM Mono'">${d.AvgRiskScore}</td>
+        <td><span style="color:var(--danger);font-family:'DM Mono'">${d.HighRiskCount}</span></td>
+        <td style="font-family:'DM Mono'">${d.TotalEmployees}</td>
+        <td>
+          <div class="progress"><div class="progress-fill" style="width:${d.AvgRiskScore}%;background:${d.AvgRiskScore>66?'var(--danger)':d.AvgRiskScore>33?'var(--warning)':'var(--success)'}"></div></div>
+        </td>
+      </tr>
+    `).join('');
+
+    document.getElementById('recommendationsList').innerHTML = [
+      {icon:'💰',title:'Salary Benchmarking',text:'Review compensation for employees earning below market rate. Consider annual salary adjustments linked to performance.'},
+      {icon:'📈',title:'Career Development',text:'Implement structured promotion pathways. Employees without promotions after 3+ years show 2x higher attrition probability.'},
+      {icon:'⏰',title:'Work-Life Balance',text:'Monitor employees consistently working 60+ hours/week. Introduce workload redistribution and flexible schedules.'},
+      {icon:'😊',title:'Satisfaction Surveys',text:'Conduct quarterly pulse surveys for employees with satisfaction < 2.5. Early intervention reduces attrition by up to 40%.'},
+      {icon:'🎓',title:'Onboarding Program',text:'Strengthen onboarding for employees in their first 2 years. This high-risk tenure window benefits most from mentoring.'},
+    ].map(r => `
+      <div class="alert alert-info" style="flex-direction:column;gap:4px;margin-bottom:12px">
+        <div style="font-weight:600">${r.icon} ${r.title}</div>
+        <div style="font-size:12px;opacity:0.85;margin-top:2px">${r.text}</div>
+      </div>
+    `).join('');
+
+    const fiEntries = Object.entries(fi).slice(0,6);
+    const maxVal = fiEntries[0]?.[1] || 1;
+    document.getElementById('driversList').innerHTML = fiEntries.map(([name,val],i) => `
+      <div class="fi-row">
+        <div class="fi-label">
+          <span class="fi-name">#${i+1} ${name}</span>
+          <span class="fi-val">${(val*100).toFixed(1)}%</span>
+        </div>
+        <div class="fi-bar">
+          <div class="fi-fill" style="width:${(val/maxVal*100).toFixed(1)}%"></div>
+        </div>
+      </div>
+    `).join('');
+  } catch(e) {}
+}
+
+// ── Init ───────────────────────────────────────────────────────────────────────
+refreshStatus();
+</script>
+</body>
+</html>
